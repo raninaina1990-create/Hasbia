@@ -1,0 +1,17 @@
+// frontend/components/VideoPlayer.tsx
+import ReactPlayer from 'react-player';
+import ChatBox from './ChatBox';
+
+export default function VideoPlayer({ videoUrl, notes, topic }) {
+  return (
+    <div className="flex flex-col md:flex-row">
+      <div className="w-full md:w-2/3">
+        <ReactPlayer url={videoUrl} controls width="100%" />
+        <NotesViewer notes={notes} />
+      </div>
+      <div className="w-full md:w-1/3">
+        <ChatBox topic={topic} />
+      </div>
+    </div>
+  );
+}

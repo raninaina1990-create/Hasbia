@@ -1,0 +1,24 @@
+punjab-edu-ai/
+├── frontend/ (Next.js app)
+│   ├── components/
+│   │   ├── Header.tsx (navigation, search/filter)
+│   │   ├── TopicGenerator.tsx (input form for topics)
+│   │   ├── VideoPlayer.tsx (video + chat box)
+│   │   ├── NotesViewer.tsx (multi-lang notes)
+│   │   ├── SubjectSection.tsx (class/subject lists)
+│   │   ├── UploadForm.tsx (for teachers)
+│   │   └── ChatBox.tsx (AI tutor)
+│   ├── pages/
+│   │   ├── index.tsx (home page)
+│   │   ├── [subject]/[class]/[topic].tsx (dynamic topic pages)
+│   │   └── api/ (Next.js API routes for auth/uploads)
+│   ├── public/ (assets)
+│   ├── styles/ (Tailwind CSS)
+│   └── next.config.js (i18n config)
+├── backend/ (Node.js/Express)
+│   ├── models/ (MongoDB schemas: Topic, User, etc.)
+│   ├── routes/ (API endpoints: generate, chat, upload)
+│   ├── middleware/ (auth, rate limiting)
+│   ├── services/ (AI integrations)
+│   └── server.js (main server)
+└── README.md

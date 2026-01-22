@@ -1,0 +1,26 @@
+// frontend/components/SubjectSection.tsx
+import { useState } from 'react';
+
+const subjects = ['Physics', 'Math', 'Chemistry'];
+const classes = ['9th', '10th', '11th', '12th'];
+
+export default function SubjectSection() {
+  const [filter, setFilter] = useState({ subject: '', class: '' });
+
+  const filteredTopics = /* Fetch from API or DB based on filter */;
+
+  return (
+    <div>
+      <input placeholder="Search topics..." onChange={(e) => setFilter({ ...filter, topic: e.target.value })} />
+      <select onChange={(e) => setFilter({ ...filter, subject: e.target.value })}>
+        <option>All Subjects</option>
+        {subjects.map(s => <option key={s}>{s}</option>)}
+      </select>
+      <select onChange={(e) => setFilter({ ...filter, class: e.target.value })}>
+        <option>All Classes</option>
+        {classes.map(c => <option key={c}>{c}</option>)}
+      </select>
+      {/* Render filtered topics as links */}
+    </div>
+  );
+}

@@ -1,0 +1,30 @@
+// frontend/components/ChatBox.tsx
+import { useState } from 'react';
+import axios from 'axios';
+
+export default function ChatBox({ topic }) {
+  const [question, setQuestion] = useState('');
+  const [messages, setMessages] = useState([]);
+
+  const handleSend = async () => {
+    const response = await axios.post('/api/topics/chat', { question, context: topic });
+    setMessages([...messages, { q: question, a: response.data.answer }]);
+    setQuestion('');
+  };
+
+  return (
+    <div className="border p-4">
+      <h3>AI Tutor</h3>
+      <div className="h-64 overflow-y-auto">
+        {messages.map((msg, i) => (
+          <div key={i}>
+            <p><strong>You:</strong> {msg.q}</p>
+            <p><strong>AI:</strong> {msg.a}</p>
+          </div>
+        ))}
+      </div>
+      <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask a question..." />
+      <button onClick={handleSend}>Send</button>
+    </div>
+  );
+}

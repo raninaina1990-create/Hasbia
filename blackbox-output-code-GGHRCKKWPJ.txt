@@ -1,0 +1,14 @@
+// frontend/pages/index.tsx
+import { useState } from 'react';
+import TopicGenerator from '../components/TopicGenerator';
+import SubjectSection from '../components/SubjectSection';
+
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-gray-100 p-4">
+      <h1 className="text-2xl font-bold text-center mb-4">PunjabEduAI</h1>
+      <TopicGenerator />
+      <SubjectSection />
+    </div>
+  );
+}

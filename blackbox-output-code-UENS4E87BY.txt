@@ -1,0 +1,33 @@
+// frontend/components/TopicGenerator.tsx
+import { useState } from 'react';
+import axios from 'axios';
+
+export default function TopicGenerator() {
+  const [topic, setTopic] = useState('');
+  const [languages, setLanguages] = useState(['English']);
+  const [content, setContent] = useState(null);
+
+  const handleGenerate = async () => {
+    const response = await axios.post('/api/topics/generate', { topic, languages });
+    setContent(response.data);
+  };
+
+  return (
+    <div className="mb-8">
+      <input
+        type="text"
+        placeholder="Enter topic, e.g., '10th class Physics Ohm’s Law'"
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+        className="w-full p-2 border rounded mb-2"
+      />
+      <select multiple onChange={(e) => setLanguages([...e.target.selectedOptions].map(o => o.value))}>
+        <option>English</option>
+        <option>Urdu</option>
+        <option>Punjabi</option>
+      </select>
+      <button onClick={handleGenerate} className="bg-blue-500 text-white p-2 rounded">Generate</button>
+      {content && <VideoPlayer videoUrl={content.videoUrl} notes={content.notes} topic={topic} />}
+    </div>
+  );
+}
