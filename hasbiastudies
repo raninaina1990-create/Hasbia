@@ -1,0 +1,226 @@
+Copy code
+punjab-edu-ai/
+├── frontend/ (Next.js app)
+│   ├── components/
+│   │   ├── Header.tsx (navigation, search/filter)
+│   │   ├── TopicGenerator.tsx (input form for topics)
+│   │   ├── VideoPlayer.tsx (video + chat box)
+│   │   ├── NotesViewer.tsx (multi-lang notes)
+│   │   ├── SubjectSection.tsx (class/subject lists)
+│   │   ├── UploadForm.tsx (for teachers)
+│   │   └── ChatBox.tsx (AI tutor)
+│   ├── pages/
+│   │   ├── index.tsx (home page)
+│   │   ├── [subject]/[class]/[topic].tsx (dynamic topic pages)
+│   │   └── api/ (Next.js API routes for auth/uploads)
+│   ├── public/ (assets)
+│   ├── styles/ (Tailwind CSS)
+│   └── next.config.js (i18n config)
+├── backend/ (Node.js/Express)
+│   ├── models/ (MongoDB schemas: Topic, User, etc.)
+│   ├── routes/ (API endpoints: generate, chat, upload)
+│   ├── middleware/ (auth, rate limiting)
+│   ├── services/ (AI integrations)
+│   └── server.js (main server)
+└── README.md
+// backend/server.js
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const dotenv = require('dotenv');
+dotenv.config();
+
+const app = express();
+app.use(cors());
+app.use(express.json());
+
+mongoose.connect(process.env.MONGODB_URI, { useNewUrlParser: true, useUnifiedTopology: true });
+
+const topicRoutes = require('./routes/topics');
+app.use('/api/topics', topicRoutes);
+
+app.listen(5000, () => console.log('Server running on port 5000'));
+
+// backend/services/aiService.js
+const OpenAI = require('openai');
+const { GoogleGenerativeAI } = require('@google/gemini-api'); // Hypothetical import
+const Synthesia = require('synthesia-sdk'); // Hypothetical
+
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const synthesia = new Synthesia({ apiKey: process.env.SYNTHESIA_API_KEY });
+
+async function generateNotes(topic, languages) {
+  const prompt = `Generate detailed notes on ${topic} in the following languages: ${languages.join(', ')}. Structure as bullet points.`;
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4',
+    messages: [{ role: 'user', content: prompt }],
+  });
+  return response.choices[0].message.content;
+}
+
+async function generateVideo(topic) {
+  // Synthesia API call (simplified)
+  const video = await synthesia.generateVideo({
+    script: `Explain ${topic} in simple terms.`,
+    avatar: 'default',
+  });
+  return video.url; // Assume it returns a URL
+}
+
+async function chatWithTutor(question, context) {
+  const response = await gemini.generateText({
+    prompt: `Answer as an AI tutor for ${context}: ${question}`,
+  });
+  return response.text;
+}
+
+module.exports = { generateNotes, generateVideo, chatWithTutor };
+const express = require('express');
+const { generateNotes, generateVideo } = require('../services/aiService');
+const Topic = require('../models/Topic'); // MongoDB model
+
+const router = express.Router();
+
+// Generate content for a topic
+router.post('/generate', async (req, res) => {
+  const { topic, languages } = req.body;
+  try {
+    const notes = await generateNotes(topic, languages);
+    const videoUrl = await generateVideo(topic);
+    const newTopic = new Topic({ topic, notes, videoUrl, languages });
+    await newTopic.save();
+    res.json({ notes, videoUrl });
+  } catch (error) {
+    res.status(500).json({ error: 'Generation failed' });
+  }
+});
+
+// Chat endpoint
+router.post('/chat', async (req, res) => {
+  const { question, context } = req.body;
+  const answer = await chatWithTutor(question, context);
+  res.json({ answer });
+});
+
+module.exports = router;
+// frontend/pages/index.tsx
+import { useState } from 'react';
+import TopicGenerator from '../components/TopicGenerator';
+import SubjectSection from '../components/SubjectSection';
+
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-gray-100 p-4">
+      <h1 className="text-2xl font-bold text-center mb-4">PunjabEduAI</h1>
+      <TopicGenerator />
+      <SubjectSection />
+    </div>
+  );
+}
+// frontend/components/TopicGenerator.tsx
+import { useState } from 'react';
+import axios from 'axios';
+
+export default function TopicGenerator() {
+  const [topic, setTopic] = useState('');
+  const [languages, setLanguages] = useState(['English']);
+  const [content, setContent] = useState(null);
+
+  const handleGenerate = async () => {
+    const response = await axios.post('/api/topics/generate', { topic, languages });
+    setContent(response.data);
+  };
+
+  return (
+    <div className="mb-8">
+      <input
+        type="text"
+        placeholder="Enter topic, e.g., '10th class Physics Ohm’s Law'"
+        value={topic}
+        onChange={(e) => setTopic(e.target.value)}
+        className="w-full p-2 border rounded mb-2"
+      />
+      <select multiple onChange={(e) => setLanguages([...e.target.selectedOptions].map(o => o.value))}>
+        <option>English</option>
+        <option>Urdu</option>
+        <option>Punjabi</option>
+      </select>
+      <button onClick={handleGenerate} className="bg-blue-500 text-white p-2 rounded">Generate</button>
+      {content && <VideoPlayer videoUrl={content.videoUrl} notes={content.notes} topic={topic} />}
+    </div>
+  );
+}
+// frontend/components/VideoPlayer.tsx
+import ReactPlayer from 'react-player';
+import ChatBox from './ChatBox';
+
+export default function VideoPlayer({ videoUrl, notes, topic }) {
+  return (
+    <div className="flex flex-col md:flex-row">
+      <div className="w-full md:w-2/3">
+        <ReactPlayer url={videoUrl} controls width="100%" />
+        <NotesViewer notes={notes} />
+      </div>
+      <div className="w-full md:w-1/3">
+        <ChatBox topic={topic} />
+      </div>
+    </div>
+  );
+}
+// frontend/components/ChatBox.tsx
+import { useState } from 'react';
+import axios from 'axios';
+
+export default function ChatBox({ topic }) {
+  const [question, setQuestion] = useState('');
+  const [messages, setMessages] = useState([]);
+
+  const handleSend = async () => {
+    const response = await axios.post('/api/topics/chat', { question, context: topic });
+    setMessages([...messages, { q: question, a: response.data.answer }]);
+    setQuestion('');
+  };
+
+  return (
+    <div className="border p-4">
+      <h3>AI Tutor</h3>
+      <div className="h-64 overflow-y-auto">
+        {messages.map((msg, i) => (
+          <div key={i}>
+            <p><strong>You:</strong> {msg.q}</p>
+            <p><strong>AI:</strong> {msg.a}</p>
+          </div>
+        ))}
+      </div>
+      <input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Ask a question..." />
+      <button onClick={handleSend}>Send</button>
+    </div>
+  );
+}
+// frontend/components/SubjectSection.tsx
+import { useState } from 'react';
+
+const subjects = ['Physics', 'Math', 'Chemistry'];
+const classes = ['9th', '10th', '11th', '12th'];
+
+export default function SubjectSection() {
+  const [filter, setFilter] = useState({ subject: '', class: '' });
+
+  const filteredTopics = /* Fetch from API or DB based on filter */;
+
+  return (
+    <div>
+      <input placeholder="Search topics..." onChange={(e) => setFilter({ ...filter, topic: e.target.value })} />
+      <select onChange={(e) => setFilter({ ...filter, subject: e.target.value })}>
+        <option>All Subjects</option>
+        {subjects.map(s => <option key={s}>{s}</option>)}
+      </select>
+      <select onChange={(e) => setFilter({ ...filter, class: e.target.value })}>
+        <option>All Classes</option>
+        {classes.map(c => <option key={c}>{c}</option>)}
+      </select>
+      {/* Render filtered topics as links */}
+    </div>
+  );
+}
